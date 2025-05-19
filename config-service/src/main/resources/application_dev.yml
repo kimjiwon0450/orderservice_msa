@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: config--service
+
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/kimjiwon0450/git-local-repo.git
+          default-label: main
+          username: kimjiwon0450
+          password: qDPecCjbFNu3xPv+/2/0349v3wOy7yXrIy/Zd80k
+
+
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, refresh, beans
