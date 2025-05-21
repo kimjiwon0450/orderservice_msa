@@ -126,10 +126,8 @@ pipeline {
             }
 
         }
-        stage('Deploy Changed Services to AWS ') {
-            when {
-               expression { env.CHANGED_SERVICES != "" }
-            }
+        stage('Deploy Changed Services to AWS EC2') {
+
             steps {
                 sshaagent(credentials: ["deploy-key"]) {
                     sh """
