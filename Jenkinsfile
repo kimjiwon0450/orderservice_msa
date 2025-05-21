@@ -118,16 +118,16 @@ pipeline {
                                 docker tag ${service}:lastest ${ECR_URL}/${service}:lastest
                                 docker push ${ECR_URL}/${service}:lastest
                             """
-                    }
+                        }
 
                     }
 
                 }
             }
 
-            stage('Deploy Changed Services to AWS ') {
-
-            }
+//             stage('Deploy Changed Services to AWS ') {
+//
+//             }
 
         }
 
