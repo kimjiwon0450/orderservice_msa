@@ -1,5 +1,5 @@
 # Base 이미지
-FROM registry.docker-cn.com/library/openjdk:17-jdk-slim
+FROM openjdk:17-jdk-slim
 
 COPY build/libs/*.jar /app.jar
 
