@@ -93,6 +93,7 @@ pipeline {
                             sh """
                             echo "Building ${service}..."
                             cd ${service}
+                            chmod 400 ./gradlew
                             ./gradlew clean build -x test
                             ls -al ./build/libs
                             cd ..
