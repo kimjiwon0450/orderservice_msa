@@ -1,5 +1,5 @@
 // 자주 사용되는 필요한 변수를 전역으로 선언하는 것도 가능
-def ecrLoginHelper = "docker-credentials-ecr-login"  // ECR credentials helper 이름
+def ecrLoginHelper = "docker-credential-ecr-login"  // ECR credentials helper 이름
 def deployHost = "172.31.13.241"
 
 // 젠킨스의 선언형 파이프라인 정의부 시작 (그루비 언어)
