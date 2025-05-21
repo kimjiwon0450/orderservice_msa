@@ -129,7 +129,7 @@ pipeline {
         stage('Deploy Changed Services to AWS EC2') {
 
             steps {
-                sshaagent(credentials: ["deploy-key"]) {
+                sshagent(credentials: ["deploy-key"]) {
                     sh """
                         # Jenkins에서 배포 서버로 docker-compose.yml 복사 후 전송
                         scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${deployHost}:/home/ubuntu/docker-compose.yml
