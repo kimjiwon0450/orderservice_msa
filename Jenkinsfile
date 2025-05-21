@@ -140,6 +140,10 @@ pipeline {
                         ssh -o StrictHostKeyChecking=no ubuntu@${deployHost} '
                         cd /home/ubuntu && \
 
+                        # 시간이 지나 로그인 만료시 필요한 명령
+                        aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 116981783440.dkr.ecr.ap-northeast-2.amazonaws.com
+
+                        # docker compose를 이용해서 변경된 서비스만 이미지를 pull -> 일괄실행
                         docker-compose pull ${env.CHANGED_SERVICES} && \
                         docker compose up -d ${env.CHANGED_SERVICES}
                         '
