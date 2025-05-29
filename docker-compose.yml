@@ -61,7 +61,7 @@ services:
     restart: always
 
   order-service:
-    image: 116981783440.dkr.ecr.ap-northeast-2.amazonaws.com/order-service:latest
+    image: 116981783440.dkr.ecr.ap-northeast-2.amazonaws.com/ordering-service:latest
     container_name: order-service
     networks:
       - msa-network
@@ -91,6 +91,20 @@ services:
       - "6379:6379"
     networks:
       - msa-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672" # AMQP 포트
+      - "15672:15672" # 관리 UI 포트
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin123
+    networks:
+      - msa-network
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
 
   mysql-db:
     image: mysql:8

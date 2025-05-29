@@ -6,6 +6,7 @@ import com.playdata.orderingservice.client.ProductServiceClient;
 import com.playdata.orderingservice.client.UserServiceClient;
 import com.playdata.orderingservice.common.auth.TokenUserInfo;
 import com.playdata.orderingservice.common.dto.CommonResDto;
+import com.playdata.orderingservice.ordering.controller.SseController;
 import com.playdata.orderingservice.ordering.dto.OrderingListResDto;
 import com.playdata.orderingservice.ordering.dto.OrderingSaveReqDto;
 import com.playdata.orderingservice.ordering.dto.ProductResDto;
@@ -38,6 +39,7 @@ public class OrderingService {
 
     private final OrderingRepository orderingRepository;
     private final RestTemplate restTemplate;
+    private final OrderNotificationService orderNotificationService;
 
     // feign client 구현체 주입 받기
     private final UserServiceClient userServiceClient;
@@ -106,7 +108,13 @@ public class OrderingService {
         processOrderToProductService(dtoList, userDto.getId(), ordering);
 
         // 모든 로직에 장애가 없었다면 주문 확정(status가 ORDERED로 처리)
-        return orderingRepository.save(ordering);
+        Ordering savedOrdering = orderingRepository.save(ordering);
+
+        // 주문 완료 알림 발송
+        orderNotificationService.sendNewOrderNotification(savedOrdering);
+        log.info("order notification sent successfully, orderId: {}", savedOrdering.getId());
+
+        return savedOrdering;
     }
 
     public UserResDto getUserResDto(String email) {
@@ -121,10 +129,10 @@ public class OrderingService {
                 () -> userServiceClient.findByEmail(email)
 //                    throwable -> {
 //                        // 장애가 발생한 상황에 실행할 객체 선언 (fallback)
-                      // 이후의 로직을 계속 실행하고 싶을 때 사용.
-                      // 여기에 작성하는 로직으로 정상 호출을 완벽하게 대체할 수 있을 때 사용.
-                      // 우리의 상황 -> user-service에서 장애 발생하면 id를 받아올 방법이 아예 없음;;
-                      // 정상 호출을 완벽하게 대체할 수 없음. try-catch로 주문 흐름을 보류쪽으로 빼서 작업.
+                // 이후의 로직을 계속 실행하고 싶을 때 사용.
+                // 여기에 작성하는 로직으로 정상 호출을 완벽하게 대체할 수 있을 때 사용.
+                // 우리의 상황 -> user-service에서 장애 발생하면 id를 받아올 방법이 아예 없음;;
+                // 정상 호출을 완벽하게 대체할 수 없음. try-catch로 주문 흐름을 보류쪽으로 빼서 작업.
 //                    }
         );
         return byEmail.getResult();
@@ -347,7 +355,6 @@ public class OrderingService {
 
 
 }
-
 
 
 

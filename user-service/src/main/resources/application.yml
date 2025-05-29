@@ -6,11 +6,56 @@ server:
 spring:
   application:
     name: user-service
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin123
 
+  mail:
+    # 지메일 사용
+    host: smtp.gmail.com # SMTP 서버 호스트
+    port: 587 # SMTP 서버 포트
+    username: kimjiah045022
+    password: lydhyaxqaqkwsyxb
+    properties:
+      mail:
+        smtp:
+          auth: true # 사용자 인증 시도 여부 (앱 비밀번호로 인즌)
+          timeout: 5000
+          starttls:
+            enable: true
 
+    # 네이버 사용
+#    host: smtp.naver.com # SMTP 서버 호스트
+#    port: 465 # SMTP 서버 포트
+#    username: fresh04502@naver.com
+#    password: naver731068
+#    properties:
+#      mail:
+#        smtp:
+#          auth: true # 사용자 인증 시도 여부 (앱 비밀번호로 인즌)
+#          timeout: 5000
+#          ssl:
+#            enable: true
+#            trust: smtp.naver.com
 
+# 카카오 로그인용 데이터
+oauth2:
+  kakao:
+    client-id: c2696386a65139258d6f3ac4fef120a4
+    redirect-uri: http://localhost:8000/user-service/user/kakao
 
-
+# spring actuator 설정
+# 각 서비스마다 busrefresh 입력이 필요하다
+management:
+  endpoint:
+    health:
+      show-details: always # health 요청 보냈을 때 건강상태 좀 더 디테일하게 보기
+  endpoints:
+    web:
+      exposure:
+        include: "health, busrefresh, beans"
 
 
 

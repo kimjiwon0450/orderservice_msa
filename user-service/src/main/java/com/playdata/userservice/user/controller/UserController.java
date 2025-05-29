@@ -3,14 +3,17 @@ package com.playdata.userservice.user.controller;
 import com.playdata.userservice.common.auth.JwtTokenProvider;
 import com.playdata.userservice.common.dto.CommonErrorDto;
 import com.playdata.userservice.common.dto.CommonResDto;
+import com.playdata.userservice.common.dto.KakaoUserDto;
 import com.playdata.userservice.user.dto.UserLoginReqDto;
 import com.playdata.userservice.user.dto.UserResDto;
 import com.playdata.userservice.user.dto.UserSaveReqDto;
 import com.playdata.userservice.user.entity.User;
 import com.playdata.userservice.user.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -19,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/user") // user 관련 요청은 /user로 시작한다고 가정.
 @RequiredArgsConstructor
 @Slf4j
+//@RefreshScope // spring cloud config가 관리하는 파일의 데이터가 변경되면 빈들을 새로고침 해주는 어노테이션
 public class UserController {
 
     // 컨트롤러는 서비스에 의존하고 있다. (요청과 함께 전달받은 데이터를 서비스에게 넘겨야 함!)
@@ -36,7 +41,6 @@ public class UserController {
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    // 야호
     // 기존에는 yml 값 가지고 올때 @Value를 사용해서 끌고 옴
     // Environment 객체를 통해 yml에 있는 프로퍼티에 직접 접근이 가능합니다.
     private final Environment env;
@@ -173,6 +177,24 @@ public class UserController {
         return ResponseEntity.ok().body(resDto);
     }
 
+    // 유효한 이메일인지 검증 요청
+    @PostMapping("/email-valid")
+    public ResponseEntity<?> emailValid(@RequestBody Map<String, String> map) {
+        String email = map.get("email");
+        log.info("이메일 인증 요청! email: {}", email);
+        String authNum = userService.mailCheck(email);
+
+        return ResponseEntity.ok().body(authNum);
+    }
+
+    // 인증 코드 검증 요청
+    @PostMapping("/verify")
+    public ResponseEntity<?> verifyEmail(@RequestBody Map<String, String> map) {
+        log.info("인증 코드 검증! map: {}", map);
+        Map<String, String> result = userService.verifyEmail(map);
+        return ResponseEntity.ok().body("Success");
+    }
+
     @GetMapping("/health-check")
     public String healthCheck() {
         String msg = "It's Working in User-service!\n";
@@ -180,11 +202,61 @@ public class UserController {
         msg += "token.secret: " + env.getProperty("token.secret");
         msg += "aws.accessKey: " + env.getProperty("aws.accessKey");
         msg += "aws.secretKey: " + env.getProperty("aws.secretKey");
+        msg += "message: " + env.getProperty("message");
 
         return msg;
     }
 
+    // 카카오 콜백 요청 처리
+    @GetMapping("/kakao")
+    public void kakaoCallback(@RequestParam String code,
+                              // 응답을 평소처럼 주는게 아니라, 직접 커스텀해서 클라이언트에게 전달.
+                              HttpServletResponse response) throws IOException {
+        log.info("카카오 콜백 처리 시작! code: {}", code);
 
+        // 인가코드로 액세스토큰 받기
+        String kakaoAccessToken = userService.getKakaoAccessToken(code);
+        // 액세스토큰으로 사용자 정보 받기
+        KakaoUserDto dto = userService.getKakaoUserInfo(kakaoAccessToken);
+        // 회원가입 or 로그인 처리
+        UserResDto resDto = userService.findOrCreateKakaoUser(dto);
+
+        // JWT 토큰 생성 (우리 사이트 로그인 유지를 위해. 사용자 정보를 위해.)
+        String token = jwtTokenProvider.createToken(resDto.getEmail(), resDto.getRole().toString());
+        String refreshToken
+                = jwtTokenProvider.createRefreshToken(resDto.getEmail(), resDto.getRole().toString());
+
+        // 리프레시 토큰 redis에 저장
+        redisTemplate.opsForValue().set("user:refresh:" + resDto.getId(), refreshToken, 2, TimeUnit.MINUTES);
+
+        // 팝업 닫기 HTML 응답 (token, id, role 이 전달됨)
+        String html = String.format("""
+                <!DOCTYPE html>
+                <html>
+                <head><title>카카오 로그인 완료</title></head>
+                <body>
+                    <script>
+                        if (window.opener) {
+                            window.opener.postMessage({
+                                type: 'OAUTH_SUCCESS',
+                                token: '%s',
+                                id: '%s',
+                                role: '%s',
+                                provider: 'KAKAO'
+                            }, 'http://localhost:5173);
+                            window.close();
+                        } else {
+                            window.location.href = 'http://localhost:5173';
+                        }
+                    </script>
+                    <p>카카오 로그인 처리 중...</p>
+                </body>
+                </html>
+                """, token, resDto.getId(), resDto.getRole().toString());
+
+        response.setContentType("text/html;charset=UTF-8");
+        response.getWriter().write(html);
+    }
 }
 
 
