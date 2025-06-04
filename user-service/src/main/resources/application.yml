@@ -1,16 +1,11 @@
 # 빌드 위한 주석
 
 server:
-  port: 0
+  port: 8081
 
 spring:
   application:
     name: user-service
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: admin
-    password: admin123
 
   mail:
     # 지메일 사용
