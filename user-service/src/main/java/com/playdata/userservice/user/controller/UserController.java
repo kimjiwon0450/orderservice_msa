@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/user") // user 관련 요청은 /user로 시작한다고 가정.
 @RequiredArgsConstructor
 @Slf4j
-//@RefreshScope // spring cloud config가 관리하는 파일의 데이터가 변경되면 빈들을 새로고침 해주는 어노테이션
+// @RefreshScope // spring cloud config가 관리하는 파일의 데이터가 변경되면 빈들을 새로고침해 주는 아노테이션
 public class UserController {
 
     // 컨트롤러는 서비스에 의존하고 있다. (요청과 함께 전달받은 데이터를 서비스에게 넘겨야 함!)
@@ -229,7 +229,7 @@ public class UserController {
         // 리프레시 토큰 redis에 저장
         redisTemplate.opsForValue().set("user:refresh:" + resDto.getId(), refreshToken, 2, TimeUnit.MINUTES);
 
-        // 팝업 닫기 HTML 응답 (token, id, role 이 전달됨)
+        // 팝업 닫기 HTML 응답
         String html = String.format("""
                 <!DOCTYPE html>
                 <html>
@@ -243,7 +243,7 @@ public class UserController {
                                 id: '%s',
                                 role: '%s',
                                 provider: 'KAKAO'
-                            }, 'http://localhost:5173);
+                            }, 'http://localhost:5173');
                             window.close();
                         } else {
                             window.location.href = 'http://localhost:5173';
@@ -253,10 +253,17 @@ public class UserController {
                 </body>
                 </html>
                 """, token, resDto.getId(), resDto.getRole().toString());
-
         response.setContentType("text/html;charset=UTF-8");
         response.getWriter().write(html);
+
     }
+
+    @GetMapping("/k8s-stage-test")
+    public String k8sTest() {
+        return "image tag update complete!";
+    }
+
+
 }
 
 
