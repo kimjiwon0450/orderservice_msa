@@ -113,6 +113,11 @@ pipeline {
                         withAWS(region: "${REGION}", credentials: "aws-key") {
                             def changedServices = env.CHANGED_SERVICES.split(",")
                             changedServices.each { service ->
+                                // 여기서 원하는 버전을 정하거나, 커밋 태그 등을 붙여서 이미지 이름을 만들자.s
+                                def newTag = "1.0.1"
+
+
+
                                 sh """
                                 # ECR에 이미지를 push하기 위해 인증 정보를 대신 검증해 주는 도구 다운로드.
                                 # /usr/local/bin/ 경로에 해당 파일을 이동
@@ -161,5 +166,35 @@ pipeline {
                 }
             }
 
+    stage('Update k8s Repo') {
+        when {
+            expression {env.CHANGED_SERVICES != ""} // 변경된 서비스가 있을 때에만 실행
+        }
+
+        steps {
+            script{
+                // k8s 레포지토리를 클론하자.
+                // 현재 stage가 활동하는 경로는 /var/jenkins_home/workspace/pipeline폴더
+                // pipeline폴더 맗고 workspace에 클론 받고 싶어서 cd .. 실행
+                sh '''
+                    cd ..
+                    ls -a
+                    git clone https://github.com/kimjiwon0450/orderservice-k8s.git
+                '''
+
+                def changedServices = env.CHANGED_SERVICES.split(",")
+                changedServices.each { service ->
+                    def newTag = "1.0.1"
+
+                    // msa-chart/charts/<service>/values.yaml 파일 내의 image 태그를 교체
+                    sh """
+                        cd /var/jenkins_home/workspace/
+                    """
+
+
+
+                }
+            }
         }
     }
+}

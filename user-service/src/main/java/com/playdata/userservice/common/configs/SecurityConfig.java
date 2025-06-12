@@ -45,8 +45,9 @@ public class SecurityConfig {
                             "/user/findByEmail",
                             "/user/health-check",
                             "/user/email-valid",
-                            "/user/verify", "/user/kakao",
-                            "/actuator/**").permitAll()
+                            "/user/verify", "/user/kakao", "/swagger-ui.html",
+                            "/actuator/**", "/swagger-ui/**", "/v3/api-docs/**",
+                            "/swagger-resource/**").permitAll()
                     .anyRequest().authenticated();
         });
 
