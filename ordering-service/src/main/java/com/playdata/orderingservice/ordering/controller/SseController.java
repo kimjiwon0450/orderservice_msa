@@ -85,7 +85,7 @@ public class SseController {
                 }
             });
 
-        } catch (Exception e) {
+        } catch (Exception e) {  //emitter 객체 자체 생성 실패한것
             log.error("SSE 초기화 실패: {}", userEmail, e);
             activeConnections.remove(userEmail);
         }
